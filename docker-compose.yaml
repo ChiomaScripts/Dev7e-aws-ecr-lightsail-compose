@@ -1,0 +1,46 @@
+services:
+
+  # Python Girls That Code — FastAPI image hosted in Amazon ECR
+  chioma-python-app:
+    image: ${ECR_IMAGE_URI}
+    ports:
+      - "8001:8000"     # Lightsail host port 8001 -> FastAPI container port 8000
+    env_file:
+      - .env.docker
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # MongoDB — accessible internally through the Compose network
+  mongodb:
+    image: mongo
+    env_file:
+      - .env.docker
+    volumes:
+      - chioma-mongo-data:/data/db
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - mongosh --quiet --eval "db.adminCommand('ping').ok" | grep -q 1
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    restart: unless-stopped
+
+  # Mongo Express — administration UI accessible through an SSH tunnel
+  mongo-express:
+    image: techworldwithnana/mongo-express
+    ports:
+      - "127.0.0.1:8083:8081"
+    env_file:
+      - .env.docker
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  chioma-mongo-data:
+    driver: local

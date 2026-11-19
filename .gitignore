@@ -1,0 +1,21 @@
+# Environment files and credentials
+.env
+.env.*
+!.env.example
+
+# AWS credentials and SSH keys
+.aws/
+*.pem
+*.key
+
+# Python-generated files
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Editor and OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
