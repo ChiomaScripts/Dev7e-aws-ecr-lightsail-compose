@@ -425,7 +425,12 @@ The project highlights a deliberate trade-off: reusing the IAM publisher credent
 The strongest learning is **interoperability**. Docker-compatible registry semantics transfer between Nexus and ECR even though the operational responsibilities differ. With Nexus, the engineer provisioned and maintained a registry service. With ECR, AWS manages the registry, leaving the engineer to focus on repository configuration, IAM authorization and image lifecycle. Lightsail similarly simplifies server provisioning but **does not remove responsibility for Linux administration, Docker, networking, secrets or operational security**.
 
 
+**Related completed projects:**
 
+- [Dev7b — Private Docker Registry with Sonatype Nexus](https://github.com/ChiomaScripts/Dev7b-docker-nexus-registry) — self-hosted private Docker registry and application image publishing.
+- [Dev7c — Docker Compose & Persistent MongoDB](https://github.com/ChiomaScripts/Dev7c-docker-compose-volumes) — local multi-container orchestration, service networking and persistent database storage.
+- [Dev7d — Containerised Nexus Deployment](https://github.com/ChiomaScripts/Dev7d-containerized-nexus-deployment) — deploying and managing a containerised Nexus registry on a cloud server.
+- [DevOps Portfolio](https://github.com/ChiomaScripts) — broader collection of hands-on DevOps and cloud engineering projects.
 
 
 
