@@ -46,34 +46,38 @@ Dev7e does **not** claim CI/CD, infrastructure as code, TLS termination, managed
 
 ## 03 — End-to-End Architecture
 
-![Dev7e complete end-to-end deployment architecture](assets/architecture/end-to-end-overview3.png)
+![Dev7e end-to-end AWS ECR and Lightsail deployment architecture](assets/architecture/dev7e-end-to-end-overview.png)
+
+*Architecture — Image publishing and authentication, remote file transfer, Lightsail ingress, Docker Compose networking and MongoDB persistence.*
 
 
 **Control plane versus data plane.** The AWS CLI authenticates API calls using IAM credentials. Docker authenticates independently to the ECR registry using a temporary token obtained by `aws ecr get-login-password`. SSH authenticates access to the Lightsail Linux host using an SSH private key. These are three distinct security boundaries.
 
 **Image path:** Windows local Docker image → ECR registry → authenticated Docker pull on Lightsail. **Configuration path:** Windows Compose/env files → SCP over SSH → Lightsail project directory. **Runtime path:** browser → Lightsail firewall → host port 8001 → FastAPI container port 8000 → Compose network DNS `mongodb:27017` → MongoDB → Docker named volume. Mongo Express is another container on the same internal network, but its web interface was bound to host loopback and not publicly tested.
 
-The architecture images are explanatory illustrations; the commands, configuration and screenshots below are the authoritative record of observed work.
+
 
 
 ---
 
 ## 04 — ECR: Creating a Private Repository
 
-Amazon Elastic Container Registry (ECR) is AWS's managed OCI/Docker-compatible container image registry. Like Docker Hub and a Nexus Docker-hosted repository, it stores image manifests and layers that Docker clients can push and pull. Unlike the self-hosted Nexus instance in Dev7b, AWS operates the ECR service, so there is no Nexus application, droplet, registry connector port or Nexus disk volume to maintain.
+Amazon ECR replaced the self-hosted Nexus registry used in Dev7b. AWS manages the registry infrastructure; this project focused on private image publishing, IAM permissions and authenticated retrieval from Lightsail.
 
-A **repository** is a named collection of related image versions. For example, `python-girls-that-code` is the repository and `1.0` is an image tag. The full URI follows `ACCOUNT_ID.dkr.ecr.eu-west-1.amazonaws.com/python-girls-that-code:1.0`. The account ID identifies the AWS registry; `eu-west-1` identifies the region. The URI is a DNS hostname, **not a registry IP address**. Tags are human-friendly references; image digests are content-addressed identifiers. ECR can display an image index, platform-specific image and auxiliary metadata as separate entries.
+The deployed image uses the URI format `ACCOUNT_ID.dkr.ecr.eu-west-1.amazonaws.com/python-girls-that-code:1.0`. The image is addressed by registry hostname, region, repository and tag; ECR also displays its digest and image metadata.
 
 For this exercise a private repository was created in **Ireland (`eu-west-1`)**, using ECR's console. Encryption-at-rest and tag-mutability choices are repository configuration considerations; the source notes do not establish a particular production policy.
 
-![Ecr Private Repository Created](assets/screenshots/01-ecr-private-repository-created.png)
+![Evidence 01: Private ECR repository created for the Python Girls That Code image](assets/screenshots/01-ecr-private-repository-created.png)
+
+*Evidence 01 — Private ECR repository created for the Python Girls That Code image.*
 
 
 ---
 
 ## 05 — Windows AWS CLI and IAM Authentication
 
-The Windows laptop needed a way to make authenticated AWS API calls. AWS CLI is analogous to other command-line clients (Docker and Git) in that it sends requests to a remote service, but its authentication and authorization are controlled by **AWS IAM**.
+AWS CLI v2 provided authenticated access to ECR from the Windows development machine.
 
 AWS CLI v2 was installed on Windows. An IAM user named `dev7e-ecr-publisher` and an access key were created for the lab; the CLI was configured using the named profile `dev7e-ecr-publisher` and region `eu-west-1`. **IAM user access keys are long-lived secrets, not the same as the temporary ECR Docker token.** They should not be committed to source control, copied into README examples, or displayed in screenshots.
 
@@ -84,15 +88,25 @@ aws sts get-caller-identity --profile dev7e-ecr-publisher
 
 `aws configure` writes CLI settings to the local AWS configuration/credentials files. `sts get-caller-identity` checks *which identity the AWS API sees*, reducing the risk of accidentally operating as the wrong AWS user. The IAM user was reused on Lightsail for convenience; a read-only pull identity or temporary role-based credentials would be preferable for a durable deployment. The attempt to explore IAM Identity Center was discontinued; it was **not** part of the final implementation.
 
-![Aws Cli Installed Windows](assets/screenshots/02-aws-cli-installed-windows.png)
+![Evidence 02: AWS CLI v2 installation completed on the Windows workstation](assets/screenshots/02-aws-cli-installed-windows.png)
 
-![Iam User Creation](assets/screenshots/03-iam-user-creation.png)
+*Evidence 02 — AWS CLI v2 installation completed on the Windows workstation.*
 
-![Iam Ecr Permissions](assets/screenshots/04-iam-ecr-permissions.png)
+![Evidence 03: Dedicated IAM user created for ECR publishing](assets/screenshots/03-iam-user-creation.png)
 
-![Iam User Review](assets/screenshots/05-iam-user-review.png)
+*Evidence 03 — Dedicated IAM user created for ECR publishing.*
 
-![Aws Cli Identity Confirmed](assets/screenshots/06-aws-cli-identity-confirmed.png)
+![Evidence 04: IAM permissions configured for private ECR access](assets/screenshots/04-iam-ecr-permissions.png)
+
+*Evidence 04 — IAM permissions configured for private ECR access.*
+
+![Evidence 05: IAM user configuration reviewed before CLI authentication](assets/screenshots/05-iam-user-review.png)
+
+*Evidence 05 — IAM user configuration reviewed before CLI authentication.*
+
+![Evidence 06: AWS STS confirms the active dev7e-ecr-publisher identity](assets/screenshots/06-aws-cli-identity-confirmed.png)
+
+*Evidence 06 — AWS STS confirms the active dev7e-ecr-publisher identity.*
 
 
 ---
@@ -124,15 +138,25 @@ docker push "$REGISTRY/python-girls-that-code:1.0"
 
 The local image architecture was verified as **`linux/amd64`**. `docker tag` adds another name pointing to the existing image; it does not rebuild the application. `docker push` uploads image layers and manifests to ECR. The ECR console subsequently showed the `1.0` image reference. The image's source code remains in Dev7a rather than being duplicated here.
 
-![Ecr Repository Uri](assets/screenshots/07-ecr-repository-uri.png)
+![Evidence 07: ECR repository URI retrieved from AWS CLI](assets/screenshots/07-ecr-repository-uri.png)
 
-![Docker Ecr Login](assets/screenshots/08-docker-ecr-login.png)
+*Evidence 07 — ECR repository URI retrieved from AWS CLI.*
 
-![Local Image Tagging](assets/screenshots/09-local-image-tagging.png)
+![Evidence 08: Docker authenticated to the private ECR registry](assets/screenshots/08-docker-ecr-login.png)
 
-![Docker Image Push](assets/screenshots/10-docker-image-push.png)
+*Evidence 08 — Docker authenticated to the private ECR registry.*
 
-![Ecr Image Listed](assets/screenshots/11-ecr-image-listed.png)
+![Evidence 09: Existing FastAPI image tagged with its ECR destination](assets/screenshots/09-local-image-tagging.png)
+
+*Evidence 09 — Existing FastAPI image tagged with its ECR destination.*
+
+![Evidence 10: Docker push transfers the application image to ECR](assets/screenshots/10-docker-image-push.png)
+
+*Evidence 10 — Docker push transfers the application image to ECR.*
+
+![Evidence 11: ECR console lists the published image tag and image metadata](assets/screenshots/11-ecr-image-listed.png)
+
+*Evidence 11 — ECR console lists the published image tag and image metadata.*
 
 
 ---
@@ -151,18 +175,22 @@ free -h
 df -h /
 ```
 
-These commands establish user identity, OS release, CPU architecture, memory and disk baseline before deploying services. A Lightsail instance has a **private hostname/IP** for internal AWS networking and a **public IPv4** for external SSH/browser access. The private prompt hostname `ip-172-26-14-19` was not a valid destination from Windows Git Bash.
+The host checks confirmed Ubuntu 24.04.5 LTS, x86_64 and approximately 3.7 GiB RAM. A Lightsail instance has a **private hostname/IP** for internal AWS networking and a **public IPv4** for external SSH/browser access. The private prompt hostname `ip-172-26-14-19` was not a valid destination from Windows Git Bash.
 
-![Lightsail Instance Created](assets/screenshots/12-lightsail-instance-created.png)
+![Evidence 12: Lightsail Ubuntu instance provisioned in the Ireland region](assets/screenshots/12-lightsail-instance-created.png)
 
-![Ssh Connection Established](assets/screenshots/13-ssh-connection-established.png)
+*Evidence 12 — Lightsail Ubuntu instance provisioned in the Ireland region.*
+
+![Evidence 13: SSH connection established to the remote Ubuntu host](assets/screenshots/13-ssh-connection-established.png)
+
+*Evidence 13 — SSH connection established to the remote Ubuntu host.*
 
 
 ---
 
 ## 08 — Installing Docker Engine from the Official Ubuntu Repository
 
-Docker was installed directly on Ubuntu using Docker's official apt repository, rather than installing a Docker Desktop application. The steps below are included in full because each has a distinct security or package-management purpose.
+Docker was installed directly on Ubuntu using Docker's official apt repository, rather than installing a Docker Desktop application. Docker Engine and the Compose plugin were installed using Docker’s official Ubuntu apt repository.
 
 ```bash
 sudo apt update
@@ -182,12 +210,7 @@ sudo apt update
 sudo apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 ```
 
-- `apt update` refreshes package indexes; it **does not upgrade** installed packages.
-- `ca-certificates` enables TLS certificate verification for HTTPS downloads; `curl` retrieves remote content.
-- `install -m 0755 -d` creates the keyring directory with explicit permissions (`rwxr-xr-x`).
-- Docker's `gpg` key is saved as `/etc/apt/keyrings/docker.asc`, and `chmod a+r` makes it readable by the package manager.
-- The `.sources` file registers Docker's repository; `Signed-By` restricts package signature verification to the specified key. The `$(...)` expression reads the OS codename (`noble`) dynamically. `tee` writes the privileged file, while `> /dev/null` suppresses its echo.
-- The second `apt update` makes apt discover the newly registered repository. `docker-ce` is the daemon/engine, `docker-ce-cli` is the client, `containerd.io` supports container execution, `buildx` adds extended build capabilities and `docker-compose-plugin` enables the modern `docker compose` command.
+The Docker apt signing key and repository were configured before installing Engine, CLI, containerd, Buildx and Compose. This ensured the host used Docker’s maintained packages rather than an unrelated compatibility package.
 
 ```bash
 sudo systemctl status docker --no-pager
@@ -197,13 +220,19 @@ newgrp docker
 docker ps
 ```
 
-`hello-world` confirms Docker can pull and execute a container. `usermod -aG` **appends** `ubuntu` to the `docker` group without replacing existing supplementary groups. `newgrp docker` applies that membership in a new shell. Successful `docker ps` without `sudo` verifies access to the daemon socket. **Membership of the Docker group is effectively root-equivalent**, so this is a privilege decision, not merely a convenience.
+`hello-world` validated container execution; `docker ps` then worked without `sudo` after adding `ubuntu` to the Docker group. **Docker group membership grants root-equivalent privileges** and should be treated as a security decision.
 
-![Docker Service Active](assets/screenshots/14-docker-service-active.png)
+![Evidence 14: Docker Engine service running on Lightsail](assets/screenshots/14-docker-service-active.png)
 
-![Docker Hello World Test](assets/screenshots/15-docker-hello-world-test.png)
+*Evidence 14 — Docker Engine service running on Lightsail.*
 
-![Docker Group Access](assets/screenshots/16-docker-group-access.png)
+![Evidence 15: Hello-world container validates Docker installation](assets/screenshots/15-docker-hello-world-test.png)
+
+*Evidence 15 — Hello-world container validates Docker installation.*
+
+![Evidence 16: Docker commands run successfully as the ubuntu user](assets/screenshots/16-docker-group-access.png)
+
+*Evidence 16 — Docker commands run successfully as the ubuntu user.*
 
 
 ---
@@ -228,9 +257,13 @@ docker images
 
 The Docker pull completed and the ECR-tagged image appeared in the server's local image list. This is independent verification that the remote host could authenticate to ECR and retrieve the private image. The repository stores no IAM secrets. On long-lived systems, prefer temporary scoped credentials and ensure Docker can reauthenticate when pulling after a token expires.
 
-![Lightsail Ecr Authentication](assets/screenshots/17-lightsail-ecr-authentication.png)
+![Evidence 17: Lightsail AWS CLI and Docker authenticated to Amazon ECR](assets/screenshots/17-lightsail-ecr-authentication.png)
 
-![Lightsail Private Image Pull](assets/screenshots/18-lightsail-private-image-pull.png)
+*Evidence 17 — Lightsail AWS CLI and Docker authenticated to Amazon ECR.*
+
+![Evidence 18: Private FastAPI image pulled successfully onto Lightsail](assets/screenshots/18-lightsail-private-image-pull.png)
+
+*Evidence 18 — Private FastAPI image pulled successfully onto Lightsail.*
 
 
 ---
@@ -259,7 +292,9 @@ services:
     volumes:
       - chioma-mongo-data:/data/db
     healthcheck:
-      test: ["CMD-SHELL", "mongosh --quiet --eval "db.adminCommand('ping').ok" | grep -q 1"]
+      test:
+        - CMD-SHELL
+        - mongosh --quiet --eval "db.adminCommand('ping').ok" | grep -q 1
       interval: 10s
       timeout: 5s
       retries: 10
@@ -316,15 +351,23 @@ docker compose up -d
 docker compose ps
 ```
 
-`chmod 600` grants the owner read/write access and removes permissions for group/others. `config --quiet` checks Compose syntax/interpolation without printing expanded secrets; `config --images` lists the three resolved images. `up -d` creates/starts the network, volume and services in detached mode. The observed output showed **MongoDB healthy**, **FastAPI up** and **Mongo Express up**. `docker compose ps` showed host port 8001 mapped to app port 8000, Mongo Express bound to 127.0.0.1:8083, and MongoDB without a published host port.
+`chmod 600` restricted access to the environment files. Compose validation resolved all three images before `up -d` created and started the stack. The observed output showed **MongoDB healthy**, **FastAPI up** and **Mongo Express up**. `docker compose ps` showed host port 8001 mapped to app port 8000, Mongo Express bound to 127.0.0.1:8083, and MongoDB without a published host port.
 
-![Scp Files Transfer](assets/screenshots/19-scp-files-transfer.png)
+![Evidence 19: Compose and environment files transferred to Lightsail using SCP](assets/screenshots/19-scp-files-transfer.png)
 
-![Remote Compose Validation](assets/screenshots/20-remote-compose-validation.png)
+*Evidence 19 — Compose and environment files transferred to Lightsail using SCP.*
 
-![Remote Compose Images](assets/screenshots/21-remote-compose-images.png)
+![Evidence 20: Remote Docker Compose configuration validates without errors](assets/screenshots/20-remote-compose-validation.png)
 
-![Compose Stack Running](assets/screenshots/22-compose-stack-running.png)
+*Evidence 20 — Remote Docker Compose configuration validates without errors.*
+
+![Evidence 21: Compose resolves MongoDB, Mongo Express and the private ECR image](assets/screenshots/21-remote-compose-images.png)
+
+*Evidence 21 — Compose resolves MongoDB, Mongo Express and the private ECR image.*
+
+![Evidence 22: Three containers running; MongoDB reports healthy and ports are bound](assets/screenshots/22-compose-stack-running.png)
+
+*Evidence 22 — Three containers running; MongoDB reports healthy and ports are bound.*
 
 
 ---
@@ -337,9 +380,13 @@ Docker port publishing is only one layer of network access. Lightsail also has a
 
 Mongo Express was deliberately left bound to `127.0.0.1:8083`; it could be reached via an SSH local port-forward if required, without exposing its admin interface publicly. No MongoDB 27017 inbound rule should be added. The demonstrated UI used HTTP, not HTTPS, and is suitable only for a limited learning exercise with non-sensitive test data.
 
-![Lightsail Firewall Rule](assets/screenshots/23-lightsail-firewall-rule.png)
+![Evidence 23: Lightsail inbound TCP 8001 firewall rule configured for browser access](assets/screenshots/23-lightsail-firewall-rule.png)
 
-![Fastapi Browser Ui](assets/screenshots/24-fastapi-browser-ui.png)
+*Evidence 23 — Lightsail inbound TCP 8001 firewall rule configured for browser access.*
+
+![Evidence 24: Python Girls That Code interface loads from the Lightsail public endpoint](assets/screenshots/24-fastapi-browser-ui.png)
+
+*Evidence 24 — Python Girls That Code interface loads from the Lightsail public endpoint.*
 
 
 ---
@@ -378,7 +425,7 @@ The project highlights a deliberate trade-off: reusing the IAM publisher credent
 The strongest learning is **interoperability**. Docker-compatible registry semantics transfer between Nexus and ECR even though the operational responsibilities differ. With Nexus, the engineer provisioned and maintained a registry service. With ECR, AWS manages the registry, leaving the engineer to focus on repository configuration, IAM authorization and image lifecycle. Lightsail similarly simplifies server provisioning but **does not remove responsibility for Linux administration, Docker, networking, secrets or operational security**.
 
 
-This README is both an implementation case study and a technical revision reference. It intentionally distinguishes **observed evidence**, **conceptual explanation** and **future improvements**.
+
 
 
 
