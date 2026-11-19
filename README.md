@@ -48,9 +48,6 @@ Dev7e does **not** claim CI/CD, infrastructure as code, TLS termination, managed
 
 ![Dev7e complete end-to-end deployment architecture](assets/architecture/dev7e-end-to-end-overview.png)
 
-**Technical reference diagram (scalable SVG):**
-
-![Precise Dev7e technical architecture](assets/architecture/dev7e-technical-architecture.svg)
 
 **Control plane versus data plane.** The AWS CLI authenticates API calls using IAM credentials. Docker authenticates independently to the ECR registry using a temporary token obtained by `aws ecr get-login-password`. SSH authenticates access to the Lightsail Linux host using an SSH private key. These are three distinct security boundaries.
 
