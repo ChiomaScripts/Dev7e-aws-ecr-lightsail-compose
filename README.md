@@ -6,7 +6,7 @@
 
 > **Scope:** This is a learning deployment, not a production-hardened system. The published application UI was verified; Mongo Express browser access and a remote persistence test were not performed.
 
-**Navigation:** [Architecture](#03--end-to-end-architecture) · [ECR](#04--ecr-creating-a-private-repository) · [IAM](#05--windows-aws-cli-and-iam-authentication) · [Lightsail](#07--lightsail-instance-provisioning-and-ssh) · [Docker Compose](#10--remote-compose-configuration-and-environment-files) · [Validation](#12--lightsail-firewall-browser-access-and-verification) · [Screenshot map](assets/screenshots/SCREENSHOT-MAP.md)
+**Navigation:** [Architecture](#03--end-to-end-architecture) · [ECR](#04--ecr-creating-a-private-repository) · [IAM](#05--windows-aws-cli-and-iam-authentication) · [Lightsail](#07--lightsail-instance-provisioning-and-ssh) · [Docker Compose](#10--remote-compose-configuration-and-environment-files) · [Validation](#12--lightsail-firewall-browser-access-and-verification) 
 
 ---
 
