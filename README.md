@@ -46,7 +46,7 @@ Dev7e does **not** claim CI/CD, infrastructure as code, TLS termination, managed
 
 ## 03 — End-to-End Architecture
 
-![Dev7e end-to-end AWS ECR and Lightsail deployment architecture](assets/architecture/dev7e-end-to-end-overview.png)
+![Dev7e end-to-end AWS ECR and Lightsail deployment architecture](assets/architecture/end-to-end-overview3.png)
 
 *Architecture — Image publishing and authentication, remote file transfer, Lightsail ingress, Docker Compose networking and MongoDB persistence.*
 
