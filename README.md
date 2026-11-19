@@ -10,7 +10,7 @@
 
 ---
 
-## 01 — Executive Summary
+## 01 — Project Overview
 
 **Dev7e** demonstrates deployment of the existing **Python Girls That Code** FastAPI application to an AWS Lightsail Ubuntu instance using **Amazon ECR as a private Docker registry** and **Docker Compose** to orchestrate the application, MongoDB and Mongo Express. The application image was reused rather than rebuilt. The deployment moves from a self-hosted Nexus image registry in Dev7b to AWS-managed ECR, while preserving the containerisation and networking lessons of Dev7a/Dev7c.
 
@@ -302,7 +302,7 @@ mkdir -p ~/dev7e-aws-ecr-lightsail-compose
 # On Windows Git Bash (replace the placeholder with your Lightsail public IPv4)
 scp -i ~/.ssh/dev7e-lightsail-key.pem \
   docker-compose.yaml .env .env.docker \
-  ubuntu@YOUR_LIGHTSAIL_PUBLIC_IP:~/dev7e-aws-ecr-lightsail-compose/
+  ubuntu@MY_LIGHTSAIL_PUBLIC_IP:~/dev7e-aws-ecr-lightsail-compose/
 ```
 
 ```bash
@@ -373,21 +373,14 @@ The project highlights a deliberate trade-off: reusing the IAM publisher credent
 
 ---
 
-## 15 — Lessons Learned and Next Steps
+## 15 — Project Reflection
 
 The strongest learning is **interoperability**. Docker-compatible registry semantics transfer between Nexus and ECR even though the operational responsibilities differ. With Nexus, the engineer provisioned and maintained a registry service. With ECR, AWS manages the registry, leaving the engineer to focus on repository configuration, IAM authorization and image lifecycle. Lightsail similarly simplifies server provisioning but **does not remove responsibility for Linux administration, Docker, networking, secrets or operational security**.
 
-Potential follow-up exercises (not completed here) include testing CRUD persistence after container recreation; accessing Mongo Express over an SSH tunnel; configuring image scanning and lifecycle policies; separating publisher and puller permissions; using temporary credentials; HTTPS and domain configuration; monitoring; and CI/CD automation.
 
 This README is both an implementation case study and a technical revision reference. It intentionally distinguishes **observed evidence**, **conceptual explanation** and **future improvements**.
 
 
----
 
-## 16 — Evidence and Screenshot Index
-
-The screenshots below are extracted from the original learning notes, renamed sequentially in **README reading order**, and stored under `assets/screenshots/`. Sensitive IAM/credential portions have been obscured where appropriate. The original Word file is not included in the public repository.
-
-See [`assets/screenshots/SCREENSHOT-MAP.md`](assets/screenshots/SCREENSHOT-MAP.md) for the original document page, approximate position, filename and README section.
 
 
